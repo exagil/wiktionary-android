@@ -41,8 +41,16 @@ import java.util.regex.Pattern;
  * an update we spawn a background {@link Service} to perform the API queries.
  */
 public class WordWidget extends AppWidgetProvider {
+    /**
+     * Regular expression that splits "Word of the day" entry into word
+     * name, word type, and the first description bullet point.
+     */
+    public static final String WOTD_PATTERN =
+        "(?s)\\{\\{wotd\\|(.+?)\\|(.+?)\\|([^#\\|]+).*?\\}\\}";
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        Log.d("WordWidget.UpdateService", "onUpdate()");
         // To prevent any ANR timeouts, we perform the update in a service
         context.startService(new Intent(context, UpdateService.class));
     }
@@ -50,13 +58,17 @@ public class WordWidget extends AppWidgetProvider {
     public static class UpdateService extends Service {
         @Override
         public void onStart(Intent intent, int startId) {
+            Log.d("WordWidget.UpdateService", "onStart()");
+
             // Build the widget update for today
             RemoteViews updateViews = buildUpdate(this);
+            Log.d("WordWidget.UpdateService", "update built");
             
             // Push update for this widget to the home screen
             ComponentName thisWidget = new ComponentName(this, WordWidget.class);
             AppWidgetManager manager = AppWidgetManager.getInstance(this);
             manager.updateAppWidget(thisWidget, updateViews);
+            Log.d("WordWidget.UpdateService", "widget updated");
         }
 
         @Override
@@ -64,13 +76,6 @@ public class WordWidget extends AppWidgetProvider {
             return null;
         }
         
-        /**
-         * Regular expression that splits "Word of the day" entry into word
-         * name, word type, and the first description bullet point.
-         */
-        private static final String WOTD_PATTERN =
-            "(?s)\\{\\{wotd\\|(.+?)\\|(.+?)\\|([^#\\|]+).*?\\}\\}";
-
         /**
          * Build a widget update to show the current Wiktionary
          * "Word of the day." Will block until the online API returns.
@@ -100,9 +105,27 @@ public class WordWidget extends AppWidgetProvider {
             }
             
             RemoteViews views = null;
-            Matcher matcher = Pattern.compile(WOTD_PATTERN).matcher(pageContent);
-            if (matcher.find()) {
-                // Build an update that holds the updated widget contents
+            Matcher matcher = null;
+            
+        	Prefs prefs = new Prefs(this);
+            if (pageContent == null) {
+            	// could not get content, use cache
+            	// could be null
+            	pageContent = prefs.getPageContent();
+            }
+            
+            if (pageContent != null) {
+            	// we have page content
+            	// is it valid?
+            	matcher = Pattern.compile(WOTD_PATTERN).matcher(pageContent);
+            }
+            if (matcher != null && matcher.find()) {
+            	// valid content, cache it 
+            	// ensure that latest valid content is
+            	// always cached in case of failures
+            	prefs.setPageContent(pageContent);
+
+            	// Build an update that holds the updated widget contents
                 views = new RemoteViews(context.getPackageName(), R.layout.widget_word);
                 
                 String wordTitle = matcher.group(1);

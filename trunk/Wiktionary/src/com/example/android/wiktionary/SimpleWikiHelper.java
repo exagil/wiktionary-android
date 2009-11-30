@@ -32,6 +32,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.util.Log;
+import android.webkit.WebView;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -68,6 +69,11 @@ public class SimpleWikiHelper {
      */
     private static final int HTTP_STATUS_OK = 200;
 
+	/**
+	 * Encoding to use when showing parsed results in a {@link WebView}.
+	 */
+	public static final String ENCODING = "utf-8";
+    
     /**
      * Shared buffer used by {@link #getUrlContent(String)} when reading results
      * from an API request.
@@ -141,8 +147,11 @@ public class SimpleWikiHelper {
         String expandClause = expandTemplates ? WIKTIONARY_EXPAND_TEMPLATES : "";
         
         // Query the API for content
-        String content = getUrlContent(String.format(WIKTIONARY_PAGE,
-                encodedTitle, expandClause));
+        String url = String.format(WIKTIONARY_PAGE,
+                encodedTitle, expandClause);
+        Log.d("SimpleWikiHelper", "url: " + url);
+        String content = getUrlContent(url);
+        
         try {
             // Drill into the JSON response to find the content body
             JSONObject response = new JSONObject(content);
@@ -199,7 +208,8 @@ public class SimpleWikiHelper {
             }
             
             // Return result from buffered stream
-            return new String(content.toByteArray());
+            return new String(content.toByteArray(), ENCODING);
+            
         } catch (IOException e) {
             throw new ApiException("Problem communicating with API", e);
         }

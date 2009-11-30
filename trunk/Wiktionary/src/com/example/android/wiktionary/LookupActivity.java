@@ -68,6 +68,7 @@ public class LookupActivity extends Activity implements AnimationListener {
     private Stack<String> mHistory = new Stack<String>();
 
     private String mEntryTitle;
+    private LookupActivity mThis;
     
     /**
      * {@inheritDoc}
@@ -77,6 +78,7 @@ public class LookupActivity extends Activity implements AnimationListener {
         super.onCreate(savedInstanceState);
         
         setContentView(R.layout.lookup);
+        mThis = this;
         
         // Load animations used to show/hide progress bar
         mSlideIn = AnimationUtils.loadAnimation(this, R.anim.slide_in);
@@ -283,7 +285,7 @@ public class LookupActivity extends Activity implements AnimationListener {
             try {
                 // If query word is null, assume request for random word
                 if (query == null) {
-                    query = ExtendedWikiHelper.getRandomWord();
+                    query = ExtendedWikiHelper.getRandomWord(mThis);
                 }
                 
                 if (query != null) {
