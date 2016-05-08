@@ -1,0 +1,1 @@
+Example code showing how to create a home screen widget with the AppWidget framework in Android.  Shows the Wiktionary "Word of the day" in a widget, and updates daily with a new word.
